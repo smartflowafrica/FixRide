@@ -1,6 +1,6 @@
 # FixRide - Car Rental Application
 
-A complete car rental platform with Flutter mobile app and PHP backend.
+A complete car rental platform with Flutter mobile app and PHP backend, supporting multi-tenant car rental companies.
 
 ## 🚗 Features
 
@@ -10,21 +10,31 @@ A complete car rental platform with Flutter mobile app and PHP backend.
 - Secure payments via Paystack
 - Wallet system for quick payments
 - Track bookings (Pending → Pickup → Completed)
-- Rate and review cars
+- Rate and review cars & companies
 - Apply discount coupons
 - Favorite cars list
 
-### For Car Owners
+### For Car Owners (Individual)
 - List your cars for rent
 - Manage bookings
 - Track earnings dashboard
 - Request payouts (Bank/UPI/PayPal)
 - Upload car galleries
 
+### For Rental Companies (Multi-Tenant)
+- Company registration with document verification
+- Manage fleet of cars
+- Dashboard with earnings & booking stats
+- Commission-based revenue sharing
+- Company reviews & ratings system
+- Payout management
+- Activity audit logging
+
 ### Admin Panel
 - Manage users, cars, bookings
+- Approve/reject rental companies
 - Configure payment gateways
-- Set tax rates and commissions
+- Set tax rates and commissions (per company)
 - Manage cities, car types, brands
 - Banner management
 - Coupon system
@@ -53,12 +63,18 @@ A complete car rental platform with Flutter mobile app and PHP backend.
 ```
 FixRide/
 ├── lib/                    # Flutter app source
-│   ├── controller/         # Business logic
-│   ├── model/              # Data models
+│   ├── controller/         # Business logic (includes company controllers)
+│   ├── model/              # Data models (includes company models)
 │   ├── screen/             # UI screens
+│   │   └── company/        # Company owner screens
+│   ├── service/            # API services
 │   ├── payments/           # Payment integrations
 │   └── utils/              # Config, helpers
 ├── api/                    # PHP REST APIs
+│   ├── company/            # Company management APIs
+│   │   ├── inc/            # Company helper functions
+│   │   └── sql/            # Database schemas
+│   └── [other APIs]
 ├── inc/                    # PHP includes (DB, operations)
 ├── assets/                 # Static assets
 ├── android/                # Android config
@@ -123,6 +139,35 @@ Configure Paystack in admin panel or directly in `api/paymentgateway.php`
 ## 📄 License
 
 This project is proprietary software.
+
+---
+
+## 🏢 Company System
+
+The multi-tenant company system allows car rental businesses to register and manage their fleet:
+
+### Company APIs (`api/company/`)
+| Endpoint | Description |
+|----------|-------------|
+| `register.php` | Company registration |
+| `login.php` | Company authentication |
+| `dashboard.php` | Stats & earnings overview |
+| `car_list.php` | List company cars |
+| `add_car.php` | Add new car to fleet |
+| `edit_car.php` | Update car details |
+| `delete_car.php` | Remove car |
+| `bookings.php` | View company bookings |
+| `update_booking_status.php` | Manage booking status |
+| `wallet.php` | View wallet balance |
+| `request_payout.php` | Request earnings withdrawal |
+| `reviews.php` | View company reviews |
+| `reply_review.php` | Respond to customer reviews |
+
+### Security Features
+- Company ownership verification for all car/booking operations
+- Role-based access (owner, admin, staff)
+- Activity audit logging
+- Commission calculation with company-specific rates
 
 ---
 
