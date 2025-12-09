@@ -13,25 +13,11 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../../model/pgatway_modal.dart';
 import '../../model/walletreport_modal.dart';
-import '../../payments/2checkout.dart';
-import '../../payments/flutterwave.dart';
-import '../../payments/inputformater.dart';
-import '../../payments/khalti.dart';
-import '../../payments/mercadopago.dart';
-import '../../payments/midtrans.dart';
-import '../../payments/payfast.dart';
-import '../../payments/paymentcard.dart';
-import '../../payments/paypalPayment.dart';
 import '../../payments/paystack.dart';
-import '../../payments/paytmpayment.dart';
-import '../../payments/razorpay_screen.dart';
-import '../../payments/senangpay.dart';
-import '../../payments/stripe_payment.dart';
 import 'faq_screen.dart';
 
 class My_Wallet extends StatefulWidget {
@@ -183,7 +169,6 @@ class _My_WalletState extends State<My_Wallet> {
   void initState() {
     Payment();
     getlocledata();
-    razorPayClass.initiateRazorPay(handlePaymentSuccess: handlePaymentSuccess, handlePaymentError: handlePaymentError, handleExternalWallet: handleExternalWallet);
     super.initState();
   }
 
@@ -192,27 +177,8 @@ class _My_WalletState extends State<My_Wallet> {
 
   late ColorNotifire notifire;
 
-  // Razorpay Code
-
-  RazorPayClass  razorPayClass = RazorPayClass();
-
-  void handlePaymentSuccess(PaymentSuccessResponse response){
-    WalletUpdateApi(uId['id']);
-
-    Fluttertoast.showToast(msg: 'SUCCESS PAYMENT : ${response.paymentId}',timeInSecForIosWeb: 4);
-  }
-  void handlePaymentError(PaymentFailureResponse response){
-    Fluttertoast.showToast(msg: 'ERROR HERE: ${response.code} - ${response.message}',timeInSecForIosWeb: 4);
-  }
-  void handleExternalWallet(ExternalWalletResponse response){
-    Fluttertoast.showToast(msg: 'EXTERNAL_WALLET IS: ${response.walletName}',timeInSecForIosWeb: 4);
-  }
-
-
-
   @override
   void dispose() {
-    razorPayClass.desposRazorPay();
     super.dispose();
   }
   int payment = -1;
@@ -394,155 +360,23 @@ class _My_WalletState extends State<My_Wallet> {
                                                     itemBuilder: (BuildContext context, int index) {
                                                       return InkWell(
                                                         onTap: () {
-                                                          print("khfhkjshjbkjv");
+                                                          print("Payment selected");
                                                           setState(() {
                                                             payment = index;
                                                           });
                                                           sk_key = gPayment.paymentdata[index].attributes.toString().split(",").last;
-                                                          print("khfhkjshjbkjv:---${sk_key}");
-                                                          if(gPayment.paymentdata[payment].title == "Razorpay"){
-                                                            razorPayClass.openCheckout(key: gPayment.paymentdata[0].attributes, amount: '${double.parse(walletController.text)}', number: '${uId['mobile']}', name: '${uId['email']}');
-                                                            Get.back();
-                                                          } else if(gPayment.paymentdata[payment].title == "Paypal"){
-                                                            List ids = gPayment.paymentdata[1].attributes.toString().split(",");
-                                                            print('++++++++++ids:------$ids');
-                                                            paypalPayment(
-                                                              context: context,
-                                                              function: (otid){
-                                                                if (otid != null) {
-                                                                  WalletUpdateApi(uId['id']);
-                                                                } else {
-                                                                  Get.back();
-                                                                }
-                                                              },
-                                                              amt: walletController.text,
-                                                              // clientId: from12.paymentdata[1].attributes.toString().split(",").first,
-                                                              // secretKey: from12.paymentdata[1].attributes.toString().split(",").last,
-                                                              clientId: ids[0],
-                                                              secretKey: ids[1],
-                                                            );
-                                                          } else if(gPayment.paymentdata[payment].title == "Stripe"){
-                                                            Get.back();
-                                                            stripePayment();
-                                                          } else if(gPayment.paymentdata[payment].title == "PayStack"){
-                                                            Get.back();
-                                                           payStackController.paystackApi(context: context, email: uId['email'], amount: walletController.text).then((value) {
-                                                             Get.to(Paystackweb(url: payStackController.payStackModel!.data.authorizationUrl, skID: sk_key))!.then((value) {
-                                                               if (verifyPaystack == 1) {
-                                                                 WalletUpdateApi(uId['id']);
-                                                                 Fluttertoast.showToast(msg: 'Payment Successfully',timeInSecForIosWeb: 4);
-                                                               } else {
-                                                                 Get.back();
-                                                               }
-                                                             },);
-                                                           },);
-                                                          } else if(gPayment.paymentdata[payment].title == "FlutterWave"){
-                                                            Get.to(() => Flutterwave(
-                                                              totalAmount: walletController.text,
-                                                              email: uId['email'],
-                                                            ))!
-                                                                .then((otid) {
-                                                              if (otid != null) {
-                                                                Get.back();
+                                                          // Paystack Payment Only
+                                                          Get.back();
+                                                          payStackController.paystackApi(context: context, email: uId['email'], amount: walletController.text).then((value) {
+                                                            Get.to(Paystackweb(url: payStackController.payStackModel!.data.authorizationUrl, skID: sk_key))!.then((value) {
+                                                              if (verifyPaystack == 1) {
                                                                 WalletUpdateApi(uId['id']);
                                                                 Fluttertoast.showToast(msg: 'Payment Successfully',timeInSecForIosWeb: 4);
                                                               } else {
                                                                 Get.back();
                                                               }
-                                                            });
-                                                          } else if(gPayment.paymentdata[payment].title == "Paytm"){
-                                                            Get.to(() => PayTmPayment(
-                                                                totalAmount: walletController.text,
-                                                                uid: uId['id'],
-                                                            ))!
-                                                                .then((otid) {
-                                                              if (otid != null) {
-                                                                Get.back();
-                                                                WalletUpdateApi(uId['id']);
-                                                                Fluttertoast.showToast(msg: 'Payment Successfully',timeInSecForIosWeb: 4);
-                                                              } else {
-                                                                Get.back();
-                                                              }
-                                                            });
-                                                          } else if(gPayment.paymentdata[payment].title == "SenangPay"){
-                                                            Get.to(SenangPay(
-                                                                email: uId['email'],
-                                                                totalAmount: walletController.text,
-                                                                name: uId['name'],
-                                                                phon: uId['mobile']))!
-                                                                .then((otid) {
-                                                              if (otid != null) {
-                                                                Get.back();
-                                                                WalletUpdateApi(uId['id']);
-                                                              } else {
-                                                                Get.back();
-                                                              }
-                                                            });
-                                                          } else if(gPayment.paymentdata[payment].title == "MercadoPago"){
-                                                            Get.to(Merpago(
-                                                              totalAmount: walletController.text,
-                                                            ))?.then((value) {
-                                                              if(value != null){
-                                                                Get.back();
-                                                                WalletUpdateApi(uId['id']);
-                                                              } else {
-                                                              }
-                                                            });
-                                                          } else if(gPayment.paymentdata[payment].title == "Payfast"){
-                                                            Get.to(() => PayFast(
-                                                              totalAmount: walletController.text,
-                                                              email: uId['email'],
-                                                            ))!
-                                                                .then((otid) {
-                                                              if (otid != null) {
-                                                                Get.back();
-                                                                WalletUpdateApi(uId['id']);
-                                                              } else {
-                                                                Get.back();
-                                                              }
-                                                            });
-                                                            // Fluttertoast.showToast(msg: 'Not valid'.tr);
-                                                          } else if(gPayment.paymentdata[payment].title == "Midtrans"){
-                                                            Get.to(MidTrans(
-                                                                email: uId['email'],
-                                                                totalAmount: walletController.text,
-                                                                mobilenumber: uId['mobile']))?.then((value) {
-                                                              if(value != null){
-                                                                Get.back();
-                                                                WalletUpdateApi(uId['id']);
-                                                              } else {
-                                                              }
-                                                            });
-                                                          } else if (gPayment.paymentdata[payment].title == "2checkout"){
-                                                            Get.to(() => CheckOutPayment(
-                                                              totalAmount: walletController.text,
-                                                              email: uId['email'],
-                                                            ))!
-                                                                .then((otid) {
-                                                              if (otid != null) {
-                                                                Get.back();
-                                                                WalletUpdateApi(uId['id']);
-                                                                Fluttertoast.showToast(msg: 'Payment Successfully',timeInSecForIosWeb: 4);
-                                                              } else {
-                                                                Get.back();
-                                                              }
-                                                            });
-                                                          }
-                                                          else if(gPayment.paymentdata[payment].title == "Khalti Payment"){
-                                                            Get.to(() => Khalti(
-                                                              totalAmount: walletController.text,
-                                                              email: uId['email'],
-                                                            ))!
-                                                                .then((otid) {
-                                                              if (otid != null) {
-                                                                Get.back();
-                                                                WalletUpdateApi(uId['id']);
-                                                                Fluttertoast.showToast(msg: 'Payment Successfully',timeInSecForIosWeb: 4);
-                                                              } else {
-                                                                Get.back();
-                                                              }
-                                                            });
-                                                          }
+                                                            },);
+                                                          },);
                                                         },
                                                         child: Container(
                                                           height: 90,

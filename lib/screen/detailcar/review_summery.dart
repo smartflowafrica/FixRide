@@ -5,9 +5,6 @@ import 'package:carlinknew/model/coupanlist_modal.dart';
 import 'package:carlinknew/model/couponcheck_modal.dart';
 import 'package:carlinknew/model/pgatway_modal.dart';
 import 'package:carlinknew/model/walletreport_modal.dart';
-import 'package:carlinknew/payments/mercadopago.dart';
-import 'package:carlinknew/payments/midtrans.dart';
-import 'package:carlinknew/payments/razorpay_screen.dart';
 import 'package:carlinknew/screen/detailcar/successful_screen.dart';
 import 'package:carlinknew/utils/common.dart';
 import 'package:flutter/services.dart';
@@ -18,19 +15,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:readmore/readmore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../payments/flutterwave.dart';
 import '../../payments/inputformater.dart';
-import '../../payments/khalti.dart';
-import '../../payments/payfast.dart';
-import '../../payments/paymentcard.dart';
-import '../../payments/paypalPayment.dart';
 import '../../payments/paystack.dart';
-import '../../payments/paytmpayment.dart';
-import '../../payments/senangpay.dart';
-import '../../payments/stripe_payment.dart';
 import '../../utils/App_content.dart';
 import '../../utils/Colors.dart';
 import '../../utils/Custom_widget.dart';
@@ -71,10 +59,6 @@ class _ReviewSummeryState extends State<ReviewSummery> {
     Payment();
     cData();
     getvalidate();
-    razorPayClass.initiateRazorPay(
-        handlePaymentSuccess: handlePaymentSuccess,
-        handlePaymentError: handlePaymentError,
-        handleExternalWallet: handleExternalWallet);
     super.initState();
   }
 
@@ -136,25 +120,8 @@ class _ReviewSummeryState extends State<ReviewSummery> {
     } catch(e){}
   }
 
-  RazorPayClass razorPayClass = RazorPayClass();
-
-  void handlePaymentSuccess(PaymentSuccessResponse response) {
-    bNow(car['id'], id['id'], widget.toggle == true ? car['car_rent_price_driver'] : car['car_rent_price'], car['price_type'] == '1' ? 'hr' : 'days', widget.startDate, widget.sTime, widget.endDate, widget.eTime, coupon == 1 ? cList?.couponlist[inDex].id : '0', cAmt ?? '0', walletValue, car['price_type'] == '1' ? widget.hours : widget.days, total.toStringAsFixed(2), tax['tax'], totalTax, totalPayment.toStringAsFixed(2), gPayment?.paymentdata[0].id, response.paymentId, car['type_id'], car['brand_id'], widget.toggle == true ? 'With' : 'Without', car['city_id']);
-    // Fluttertoast.showToast(
-    //     msg: 'SUCCESS PAYMENT : ${response.paymentId}', timeInSecForIosWeb: 4);
-  }
-
-  void handlePaymentError(PaymentFailureResponse response) {
-    Fluttertoast.showToast(msg: 'ERROR HERE: ${response.code} - ${response.message}', timeInSecForIosWeb: 4);
-  }
-
-  void handleExternalWallet(ExternalWalletResponse response) {
-    Fluttertoast.showToast(msg: 'EXTERNAL_WALLET IS: ${response.walletName}', timeInSecForIosWeb: 4);
-  }
-
   @override
   void dispose() {
-    razorPayClass.desposRazorPay();
     super.dispose();
   }
 
@@ -332,33 +299,9 @@ class _ReviewSummeryState extends State<ReviewSummery> {
                               backgroundColor: MaterialStatePropertyAll(onbordingBlue),
                               shape: const MaterialStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(15))))),
                           onPressed: () {
-                            if (gPayment?.paymentdata[payment].title == "Razorpay") {
-                              razorPayClass.openCheckout(
-                                  key: gPayment!.paymentdata[0].attributes,
-                                  amount: totalPayment.toStringAsFixed(2),
-                                  number: '${name['mobile']}',
-                                  name: '${name['email']}');
-                              Get.back();
-                            } else if(gPayment?.paymentdata[payment].title == "Paypal"){
-                              List ids = gPayment!.paymentdata[1].attributes.toString().split(",");
-                              print('++++++++++ids:------$ids');
-                              paypalPayment(
-                                context: context,
-                                function: (e){
-                                  bNow(car['id'], id['id'], widget.toggle == true ? car['car_rent_price_driver'] : car['car_rent_price'], car['price_type'] == '1' ? 'hr' : 'days', widget.startDate, widget.sTime, widget.endDate, widget.eTime, coupon == 1 ? cList?.couponlist[inDex].id : '5', cAmt ?? '0', walletValue, car['price_type'] == '1' ? widget.hours : widget.days, total.toStringAsFixed(2), tax['tax'], totalTax,  totalPayment.toStringAsFixed(2) , gPayment?.paymentdata[0].id, "0", car['type_id'], car['brand_id'], widget.toggle == true ? 'With' : 'Without', car['city_id']);
-                                },
-                                amt: totalPayment.toStringAsFixed(2),
-                                // clientId: from12.paymentdata[1].attributes.toString().split(",").first,
-                                // secretKey: from12.paymentdata[1].attributes.toString().split(",").last,
-                                clientId: ids[0],
-                                secretKey: ids[1],
-                              );
-                            } else if(gPayment?.paymentdata[payment].title == "Stripe"){
-                              Get.back();
-                              stripePayment();
-                            } else if(gPayment?.paymentdata[payment].title == "PayStack"){
+                            // Paystack Payment Only
+                            if (gPayment != null && gPayment!.paymentdata.isNotEmpty) {
                               payStackController.paystackApi(context: context, email: name['email'], amount: totalPayment.toStringAsFixed(2)).then((value) {
-                                List ids = gPayment!.paymentdata[1].attributes.toString().split(",");
                                 Get.to(Paystackweb(url: payStackController.payStackModel!.data.authorizationUrl, skID: sk_key))!.then((value) {
                                   if (verifyPaystack == 1) {
                                     bNow(car['id'], id['id'], widget.toggle == true ? car['car_rent_price_driver'] : car['car_rent_price'], car['price_type'] == '1' ? 'hr' : 'days', widget.startDate, widget.sTime, widget.endDate, widget.eTime, coupon == 1 ? cList?.couponlist[inDex].id : '5', cAmt ?? '0', walletValue, car['price_type'] == '1' ? widget.hours : widget.days, total.toStringAsFixed(2), tax['tax'], totalTax,  totalPayment.toStringAsFixed(2) , gPayment?.paymentdata[0].id, "0", car['type_id'], car['brand_id'], widget.toggle == true ? 'With' : 'Without', car['city_id']);
@@ -367,104 +310,10 @@ class _ReviewSummeryState extends State<ReviewSummery> {
                                     Get.back();
                                   }
                                 },);
-                                Get.to(Paystackweb(url: payStackController.payStackModel!.data.accessCode,skID: ids[1]))!.then((value) {
-                                  if (verifyPaystack == 1) {
-                                    Get.back();
-                                    bNow(car['id'], id['id'], widget.toggle == true ? car['car_rent_price_driver'] : car['car_rent_price'], car['price_type'] == '1' ? 'hr' : 'days', widget.startDate, widget.sTime, widget.endDate, widget.eTime, coupon == 1 ? cList?.couponlist[inDex].id : '5', cAmt ?? '0', walletValue, car['price_type'] == '1' ? widget.hours : widget.days, total.toStringAsFixed(2), tax['tax'], totalTax,  totalPayment.toStringAsFixed(2) , gPayment?.paymentdata[0].id, "0", car['type_id'], car['brand_id'], widget.toggle == true ? 'With' : 'Without', car['city_id']);
-                                    Fluttertoast.showToast(msg: 'Payment Successfully',timeInSecForIosWeb: 4);
-                                  } else {
-                                    Get.back();
-                                  }
-                                },);
                               },);
-                            } else if(gPayment?.paymentdata[payment].title == "FlutterWave"){
-                              Get.to(() => Flutterwave(
-                                totalAmount: totalPayment.toStringAsFixed(2),
-                                email: name['email'],
-                              ))!
-                                  .then((otid) {
-                                if (otid != null) {
-                                  bNow(car['id'], id['id'], widget.toggle == true ? car['car_rent_price_driver'] : car['car_rent_price'], car['price_type'] == '1' ? 'hr' : 'days', widget.startDate, widget.sTime, widget.endDate, widget.eTime, coupon == 1 ? cList?.couponlist[inDex].id : '5', cAmt ?? '0', walletValue, car['price_type'] == '1' ? widget.hours : widget.days, total.toStringAsFixed(2), tax['tax'], totalTax,  totalPayment.toStringAsFixed(2) , gPayment?.paymentdata[0].id, "0", car['type_id'], car['brand_id'], widget.toggle == true ? 'With' : 'Without', car['city_id']);
-                                  Fluttertoast.showToast(msg: 'Payment Successfully',timeInSecForIosWeb: 4);
-                                } else {
-                                  Get.back();
-                                }
-                              });
-                            } else if(gPayment?.paymentdata[payment].title == "Paytm"){
-                              Get.to(() => PayTmPayment(
-                                  totalAmount: totalPayment.toStringAsFixed(2),
-                                  uid: name['id']
-                              ))!
-                                  .then((otid) {
-                                if (otid != null) {
-                                  bNow(car['id'], id['id'], widget.toggle == true ? car['car_rent_price_driver'] : car['car_rent_price'], car['price_type'] == '1' ? 'hr' : 'days', widget.startDate, widget.sTime, widget.endDate, widget.eTime, coupon == 1 ? cList?.couponlist[inDex].id : '5', cAmt ?? '0', walletValue, car['price_type'] == '1' ? widget.hours : widget.days, total.toStringAsFixed(2), tax['tax'], totalTax,  totalPayment.toStringAsFixed(2) , gPayment?.paymentdata[0].id, "0", car['type_id'], car['brand_id'], widget.toggle == true ? 'With' : 'Without', car['city_id']);
-                                  Fluttertoast.showToast(msg: 'Payment Successfully',timeInSecForIosWeb: 4);
-                                } else {
-                                  Get.back();
-                                }
-                              });
-                            } else if(gPayment?.paymentdata[payment].title == "SenangPay"){
-                              Get.to(SenangPay(
-                                  email: name['email'],
-                                  totalAmount: totalPayment.toStringAsFixed(2),
-                                  name: name['name'],
-                                  phon: name['mobile']))!
-                                  .then((otid) {
-                                if (otid != null) {
-                                  bNow(car['id'], id['id'], widget.toggle == true ? car['car_rent_price_driver'] : car['car_rent_price'], car['price_type'] == '1' ? 'hr' : 'days', widget.startDate, widget.sTime, widget.endDate, widget.eTime, coupon == 1 ? cList?.couponlist[inDex].id : '5', cAmt ?? '0', walletValue, car['price_type'] == '1' ? widget.hours : widget.days, total.toStringAsFixed(2), tax['tax'], totalTax,  totalPayment.toStringAsFixed(2) , gPayment?.paymentdata[0].id, "0", car['type_id'], car['brand_id'], widget.toggle == true ? 'With' : 'Without', car['city_id']);
-                                } else {
-                                  Get.back();
-                                }
-                              });
-                            } else if(gPayment?.paymentdata[payment].title == "MercadoPago"){
-                              Get.to(Merpago(
-                                  totalAmount: totalPayment.toStringAsFixed(2),
-                              ))?.then((value) {
-                                if(value != null){
-                                  bNow(car['id'], id['id'], widget.toggle == true ? car['car_rent_price_driver'] : car['car_rent_price'], car['price_type'] == '1' ? 'hr' : 'days', widget.startDate, widget.sTime, widget.endDate, widget.eTime, coupon == 1 ? cList?.couponlist[inDex].id : '5', cAmt ?? '0', walletValue, car['price_type'] == '1' ? widget.hours : widget.days, total.toStringAsFixed(2), tax['tax'], totalTax,  totalPayment.toStringAsFixed(2) , gPayment?.paymentdata[0].id, "0", car['type_id'], car['brand_id'], widget.toggle == true ? 'With' : 'Without', car['city_id']);
-                                } else {
-                                }
-                              });
-                            } else if(gPayment?.paymentdata[payment].title == "Payfast"){
-                              Get.to(() => PayFast(
-                                totalAmount: totalPayment.toStringAsFixed(2),
-                                email: name['email'],
-                              ))!
-                                  .then((otid) {
-                                if(otid != null){
-                                  bNow(car['id'], id['id'], widget.toggle == true ? car['car_rent_price_driver'] : car['car_rent_price'], car['price_type'] == '1' ? 'hr' : 'days', widget.startDate, widget.sTime, widget.endDate, widget.eTime, coupon == 1 ? cList?.couponlist[inDex].id : '5', cAmt ?? '0', walletValue, car['price_type'] == '1' ? widget.hours : widget.days, total.toStringAsFixed(2), tax['tax'], totalTax,  totalPayment.toStringAsFixed(2) , gPayment?.paymentdata[0].id, "0", car['type_id'], car['brand_id'], widget.toggle == true ? 'With' : 'Without', car['city_id']);
-                                } else {
-                                  Get.back();
-                                }
-                              });
-                            } else if(gPayment?.paymentdata[payment].title == "Midtrans"){
-                              Get.to(MidTrans(
-                                email: name['email'],
-                                totalAmount: totalPayment.toStringAsFixed(2),
-                                mobilenumber: name['mobile']))?.then((value) {
-                                  if(value != null){
-                                    bNow(car['id'], id['id'], widget.toggle == true ? car['car_rent_price_driver'] : car['car_rent_price'], car['price_type'] == '1' ? 'hr' : 'days', widget.startDate, widget.sTime, widget.endDate, widget.eTime, coupon == 1 ? cList?.couponlist[inDex].id : '5', cAmt ?? '0', walletValue, car['price_type'] == '1' ? widget.hours : widget.days, total.toStringAsFixed(2), tax['tax'], totalTax,  totalPayment.toStringAsFixed(2) , gPayment?.paymentdata[0].id, "0", car['type_id'], car['brand_id'], widget.toggle == true ? 'With' : 'Without', car['city_id']);
-                                  } else {
-                                  }
-                              });
-                            } else if(gPayment?.paymentdata[payment].title == "2checkout" || gPayment?.paymentdata[payment].title == "Khalti Payment"){
-
-                              Get.to(() => Khalti(
-                                totalAmount: totalPayment.toStringAsFixed(2),
-                                email: name['email'],
-                              ))!
-                                  .then((value) {
-                                if(value != null){
-                                  bNow(car['id'], id['id'], widget.toggle == true ? car['car_rent_price_driver'] : car['car_rent_price'], car['price_type'] == '1' ? 'hr' : 'days', widget.startDate, widget.sTime, widget.endDate, widget.eTime, coupon == 1 ? cList?.couponlist[inDex].id : '5', cAmt ?? '0', walletValue, car['price_type'] == '1' ? widget.hours : widget.days, total.toStringAsFixed(2), tax['tax'], totalTax,  totalPayment.toStringAsFixed(2) , gPayment?.paymentdata[0].id, "0", car['type_id'], car['brand_id'], widget.toggle == true ? 'With' : 'Without', car['city_id']);
-                                } else {
-                                  Get.back();
-                                }
-                              });
-
+                            } else {
+                              Fluttertoast.showToast(msg: 'Payment gateway not available', timeInSecForIosWeb: 4);
                             }
-                            // else{}
-                            // Get.close(0);
-                            // Get.back();
                           },
                           child: Center(
                             child: RichText(
