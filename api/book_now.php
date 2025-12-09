@@ -6,6 +6,49 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+/**
+ * Get company's commission rate from database
+ * @param int $companyId The company ID
+ * @return float Commission rate percentage
+ */
+function getCompanyCommissionRate($companyId) {
+    global $car, $set;
+    
+    if (!$companyId) {
+        return floatval($set['commission_rate']); // Default platform rate
+    }
+    
+    $companyId = intval($companyId);
+    $result = $car->query("SELECT commission_rate FROM tbl_company WHERE id = $companyId AND status = '1'");
+    
+    if ($result && $company = $result->fetch_assoc()) {
+        return floatval($company['commission_rate']);
+    }
+    
+    return floatval($set['commission_rate']); // Fallback to default rate
+}
+
+/**
+ * Calculate commission breakdown for a booking
+ * @param float $bookingAmount Total booking amount
+ * @param int $companyId The company ID (optional)
+ * @return array Commission breakdown with rate, amount, and company earning
+ */
+function calculateCommission($bookingAmount, $companyId = null) {
+    // Get company's commission rate
+    $rate = getCompanyCommissionRate($companyId);
+    
+    $bookingAmount = floatval($bookingAmount);
+    $commission = $bookingAmount * ($rate / 100);
+    $companyEarning = $bookingAmount - $commission;
+    
+    return [
+        'commission_rate' => $rate,
+        'commission_amount' => round($commission, 2),
+        'company_earning' => round($companyEarning, 2)
+    ];
+}
+
 $data = json_decode(file_get_contents('php://input'), true);
 if($data['car_id'] == '' or $data['uid'] == '' )
 {
@@ -42,14 +85,9 @@ else
 	$pick_otp = rand(1111,9999);
 	$drop_otp = rand(1111,9999);
 	
-	// Get commission rate - use company rate if car belongs to company, else use default
-	$commission = $set['commission_rate'];
-	if ($company_id) {
-	    $company_data = $car->query("SELECT commission_rate FROM tbl_company WHERE id=$company_id")->fetch_assoc();
-	    if ($company_data) {
-	        $commission = $company_data['commission_rate'];
-	    }
-	}
+	// Calculate commission using helper function
+	$commissionData = calculateCommission($o_total, $company_id);
+	$commission = $commissionData['commission_rate'];
 	
 	$table="tbl_book";
   $field_values=array("city_id","car_id","uid","car_price","pickup_date","pickup_time","price_type","return_date","return_time","cou_id","cou_amt","wall_amt","total_day_or_hr","subtotal","tax_per","tax_amt","o_total","p_method_id","transaction_id","type_id","brand_id","book_type","post_id","commission","pick_otp","drop_otp");
@@ -60,8 +98,8 @@ else
 	  
 	  // Create commission record for company bookings
 	  if ($company_id && $bookid) {
-	      $commission_amount = floatval($o_total) * floatval($commission) / 100;
-	      $company_earning = floatval($o_total) - $commission_amount;
+	      $commission_amount = $commissionData['commission_amount'];
+	      $company_earning = $commissionData['company_earning'];
 	      $car->query("INSERT INTO tbl_commission (booking_id, company_id, total_amount, commission_rate, commission_amount, company_earning, status) 
 	          VALUES ($bookid, $company_id, $o_total, $commission, $commission_amount, $company_earning, 'pending')");
 	      

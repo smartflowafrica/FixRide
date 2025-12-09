@@ -4,49 +4,42 @@
  * Endpoint: POST /api/company/update_booking_status.php
  */
 require dirname(dirname(__FILE__)) . '/inc/Connection.php';
+require __DIR__ . '/inc/company_helpers.php';
 header('Content-type: application/json');
 
 $json = file_get_contents('php://input');
 $data = json_decode($json, true);
 
 if (empty($data['company_id']) || empty($data['booking_id']) || empty($data['status'])) {
-    echo json_encode([
-        "Result" => "false",
-        "ResponseCode" => "400",
-        "ResponseMsg" => "Company ID, Booking ID and Status are required"
-    ]);
-    exit;
+    companyErrorResponse('Company ID, Booking ID and Status are required', '400');
 }
 
 $company_id = intval($data['company_id']);
 $booking_id = intval($data['booking_id']);
 $new_status = $car->real_escape_string($data['status']);
 
+// Validate company is active
+$companyAuth = validateCompanyAuth($car, $data);
+if (!$companyAuth['success']) {
+    companyErrorResponse($companyAuth['message'], $companyAuth['code']);
+}
+
 // Valid statuses
 $valid_statuses = ['Pending', 'Pick_Up', 'Completed', 'Cancelled'];
 if (!in_array($new_status, $valid_statuses)) {
-    echo json_encode([
-        "Result" => "false",
-        "ResponseCode" => "400",
-        "ResponseMsg" => "Invalid status. Must be: " . implode(', ', $valid_statuses)
-    ]);
-    exit;
+    companyErrorResponse('Invalid status. Must be: ' . implode(', ', $valid_statuses), '400');
 }
 
-// Verify booking belongs to company
+// Verify booking belongs to company using helper function
+if (!verifyBookingOwnership($car, $booking_id, $company_id)) {
+    companyErrorResponse('Booking not found or does not belong to this company', '404');
+}
+
+// Get booking details
 $booking = $car->query("SELECT b.*, c.company_id 
     FROM tbl_book b 
     JOIN tbl_car c ON b.car_id = c.id 
     WHERE b.id = $booking_id AND c.company_id = $company_id")->fetch_assoc();
-
-if (!$booking) {
-    echo json_encode([
-        "Result" => "false",
-        "ResponseCode" => "404",
-        "ResponseMsg" => "Booking not found or does not belong to this company"
-    ]);
-    exit;
-}
 
 $current_status = $booking['book_status'];
 

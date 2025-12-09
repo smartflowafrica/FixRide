@@ -4,33 +4,32 @@
  * Endpoint: POST /api/company/delete_car.php
  */
 require dirname(dirname(__FILE__)) . '/inc/Connection.php';
+require __DIR__ . '/inc/company_helpers.php';
 header('Content-type: application/json');
 
 $json = file_get_contents('php://input');
 $data = json_decode($json, true);
 
 if (empty($data['company_id']) || empty($data['car_id'])) {
-    echo json_encode([
-        "Result" => "false",
-        "ResponseCode" => "400",
-        "ResponseMsg" => "Company ID and Car ID are required"
-    ]);
-    exit;
+    companyErrorResponse('Company ID and Car ID are required', '400');
 }
 
 $company_id = intval($data['company_id']);
 $car_id = intval($data['car_id']);
 
-// Verify car belongs to company
-$existing = $car->query("SELECT * FROM tbl_car WHERE id = $car_id AND company_id = $company_id")->fetch_assoc();
-if (!$existing) {
-    echo json_encode([
-        "Result" => "false",
-        "ResponseCode" => "404",
-        "ResponseMsg" => "Car not found or does not belong to this company"
-    ]);
-    exit;
+// Validate company is active
+$companyAuth = validateCompanyAuth($car, $data);
+if (!$companyAuth['success']) {
+    companyErrorResponse($companyAuth['message'], $companyAuth['code']);
 }
+
+// Verify car belongs to company using helper function
+if (!verifyCarOwnership($car, $car_id, $company_id)) {
+    companyErrorResponse('Car not found or does not belong to this company', '404');
+}
+
+// Get existing car data for logging
+$existing = $car->query("SELECT * FROM tbl_car WHERE id = $car_id")->fetch_assoc();
 
 // Check for active bookings
 $active_bookings = $car->query("SELECT COUNT(*) as cnt FROM tbl_book 
