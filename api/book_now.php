@@ -38,15 +38,37 @@ else
 	$city_id = strip_tags(mysqli_real_escape_string($car,$data['city_id']));
 	$getid = $car->query("select * from tbl_car where id=".$car_id."")->fetch_assoc();
 	$post_id = $getid["post_id"];
+	$company_id = isset($getid["company_id"]) ? $getid["company_id"] : null;
 	$pick_otp = rand(1111,9999);
 	$drop_otp = rand(1111,9999);
+	
+	// Get commission rate - use company rate if car belongs to company, else use default
 	$commission = $set['commission_rate'];
+	if ($company_id) {
+	    $company_data = $car->query("SELECT commission_rate FROM tbl_company WHERE id=$company_id")->fetch_assoc();
+	    if ($company_data) {
+	        $commission = $company_data['commission_rate'];
+	    }
+	}
+	
 	$table="tbl_book";
   $field_values=array("city_id","car_id","uid","car_price","pickup_date","pickup_time","price_type","return_date","return_time","cou_id","cou_amt","wall_amt","total_day_or_hr","subtotal","tax_per","tax_amt","o_total","p_method_id","transaction_id","type_id","brand_id","book_type","post_id","commission","pick_otp","drop_otp");
   $data_values=array("$city_id","$car_id","$uid","$car_price","$pickup_date","$pickup_time","$price_type","$return_date","$return_time","$cou_id","$cou_amt","$wall_amt","$total_day_or_hr","$subtotal","$tax_per","$tax_amt","$o_total","$p_method_id","$transaction_id","$type_id","$brand_id","$book_type","$post_id","$commission","$pick_otp","$drop_otp");
 		
    $h = new Demand($car);
 	  $bookid = $h->carinsertdata_Api_Id($field_values,$data_values,$table);
+	  
+	  // Create commission record for company bookings
+	  if ($company_id && $bookid) {
+	      $commission_amount = floatval($o_total) * floatval($commission) / 100;
+	      $company_earning = floatval($o_total) - $commission_amount;
+	      $car->query("INSERT INTO tbl_commission (booking_id, company_id, total_amount, commission_rate, commission_amount, company_earning, status) 
+	          VALUES ($bookid, $company_id, $o_total, $commission, $commission_amount, $company_earning, 'pending')");
+	      
+	      // Send notification to company
+	      $car->query("INSERT INTO tbl_company_notification (company_id, title, description, type, reference_id) 
+	          VALUES ($company_id, 'New Booking!', 'You have received a new booking #$bookid', 'booking', $bookid)");
+	  }
 	  
 	  if($wall_amt != 0)
 {

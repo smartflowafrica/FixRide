@@ -54,6 +54,25 @@ else
 		
 		$t = $car->query("select img,title from car_type where id=".$carlists["car_type"]."")->fetch_assoc();
 		$b = $car->query("select img,title from car_brand where id=".$carlists["car_brand"]."")->fetch_assoc();
+		
+    // Get company info if car belongs to a company
+    $company_info = null;
+    if (!empty($carlists["company_id"])) {
+        $comp = $car->query("SELECT id, company_name, slug, logo, rating, is_verified, phone 
+            FROM tbl_company WHERE id=" . $carlists["company_id"] . " AND status='active'")->fetch_assoc();
+        if ($comp) {
+            $company_info = array(
+                "id" => $comp["id"],
+                "name" => $comp["company_name"],
+                "slug" => $comp["slug"],
+                "logo" => $comp["logo"],
+                "rating" => $comp["rating"],
+                "is_verified" => $comp["is_verified"] == 1,
+                "phone" => $comp["phone"]
+            );
+        }
+    }
+		
     $cars = array();
     $cars["id"] = $carlists["id"];
 	$cars["type_id"] = $carlists["car_type"];
@@ -84,6 +103,7 @@ else
 	$cars["car_rent_price_driver"] = $carlists["car_rent_price_driver"];
 	$cars["car_ac"] = $carlists["car_ac"];
 	$cars['IS_FAVOURITE'] = $car->query("select * from tbl_fav where uid=".$uid." and car_id=".$carlists['id']."")->num_rows;
+	$cars['company'] = $company_info;
 	$gal = array();
 	$gallery = $car->query("select img from tbl_gallery where car_id=".$car_id."");
 		while($rk = $gallery->fetch_assoc())

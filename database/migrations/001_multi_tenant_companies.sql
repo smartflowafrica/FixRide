@@ -158,7 +158,23 @@ ADD FOREIGN KEY (company_id) REFERENCES tbl_company(id) ON DELETE SET NULL,
 ADD INDEX idx_company (company_id);
 
 -- ============================================
--- 9. Company Settings Table
+-- 9. Company Notification Table
+-- ============================================
+CREATE TABLE IF NOT EXISTS tbl_company_notification (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    company_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    type ENUM('booking', 'payout', 'system', 'document', 'other') DEFAULT 'other',
+    reference_id INT NULL,
+    is_read TINYINT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (company_id) REFERENCES tbl_company(id) ON DELETE CASCADE,
+    INDEX idx_company_read (company_id, is_read)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================
+-- 10. Company Settings Table
 -- ============================================
 CREATE TABLE IF NOT EXISTS tbl_company_settings (
     id INT PRIMARY KEY AUTO_INCREMENT,
