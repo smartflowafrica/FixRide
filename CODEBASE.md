@@ -187,6 +187,45 @@ Payment flow:
 
 ---
 
+## Multi-Tenant Company System
+
+FixRide supports multiple rental companies with commission tracking.
+
+### Company API Endpoints
+| Endpoint | Purpose |
+|----------|---------|
+| `api/company/register.php` | Company registration |
+| `api/company/login.php` | Company user login |
+| `api/company/dashboard.php` | Dashboard stats |
+| `api/company/car_list.php` | List company cars |
+| `api/company/add_car.php` | Add new car |
+| `api/company/bookings.php` | Company bookings |
+| `api/company/earnings.php` | Earnings history |
+| `api/company/wallet.php` | Wallet balance & transactions |
+| `api/company/request_payout.php` | Request payout |
+| `api/company/update_profile.php` | Update company profile |
+| `api/company/upload_document.php` | Upload verification documents |
+| `api/company/documents.php` | List documents |
+| `api/company_info.php` | Public company profile |
+
+### Company Database Tables
+| Table | Purpose |
+|-------|---------|
+| `tbl_company` | Company profiles |
+| `tbl_company_user` | Company staff/owners |
+| `tbl_company_wallet` | Company wallet balances |
+| `tbl_company_wallet_transaction` | Wallet transaction history |
+| `tbl_company_payout` | Payout requests |
+| `tbl_company_document` | Verification documents |
+| `tbl_company_settings` | Company preferences |
+| `tbl_company_review` | Company reviews |
+| `tbl_commission` | Booking commissions |
+
+### Migration File
+`database/migrations/001_multi_tenant_companies.sql`
+
+---
+
 ## Environment Setup
 
 ### Backend Requirements
@@ -197,8 +236,9 @@ Payment flow:
 ### Database Setup
 1. Create MySQL database
 2. Import SQL schema (not in repo - from original source)
-3. Copy `inc/Connection.example.php` to `inc/Connection.php`
-4. Update credentials
+3. Run company migration: `database/migrations/001_multi_tenant_companies.sql`
+4. Copy `inc/Connection.example.php` to `inc/Connection.php`
+5. Update credentials
 
 ### Flutter Setup
 1. Install Flutter SDK
@@ -226,6 +266,10 @@ static String baseUrl = "https://yourdomain.com/api/";
 - Configure in admin panel → Payment Gateway List
 - Or modify `api/paymentgateway.php`
 
+### Commission Rate
+- Default: 15% platform commission
+- Set per company in `tbl_company.commission_rate`
+
 ---
 
 ## For AI Agents
@@ -234,11 +278,19 @@ To work with this codebase:
 
 1. **Flutter changes**: Focus on `lib/` folder
 2. **API changes**: Focus on `api/` folder  
-3. **Admin panel**: Root PHP files + `inc/` folder
-4. **Database**: Check `inc/Operation.php` for table references
+3. **Company APIs**: Focus on `api/company/` folder
+4. **Admin panel**: Root PHP files + `inc/` folder
+5. **Database**: Check `inc/Operation.php` for table references
 
 Key entry points:
 - `lib/main.dart` - Flutter app entry
 - `index.php` - Admin login
 - `dashboard.php` - Admin dashboard
 - `api/home_data.php` - Main API endpoint
+- `api/company/dashboard.php` - Company dashboard
+
+Documentation:
+- `CODEBASE.md` - Project structure (this file)
+- `API_DOCS.md` - Complete API reference
+- `README.md` - Setup instructions
+

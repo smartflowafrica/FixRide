@@ -486,3 +486,143 @@ Returns: banners, featured cars, popular cars, settings
   "ResponseMsg": "Error message"
 }
 ```
+
+---
+
+## Company/Multi-Tenant APIs
+
+### Company Registration
+**POST** `/company/register.php`
+```json
+{
+  "company_name": "ABC Rentals",
+  "email": "company@example.com",
+  "password": "password123",
+  "phone": "+1234567890",
+  "city_id": 1,
+  "owner_name": "John Doe",
+  "address": "123 Main Street",
+  "business_reg_number": "BRN123456"
+}
+```
+
+### Company Login
+**POST** `/company/login.php`
+```json
+{
+  "email": "company@example.com",
+  "password": "password123"
+}
+```
+
+### Company Dashboard
+**GET** `/company/dashboard.php?company_id=1`
+
+Returns: total_cars, active_bookings, total_earnings, pending_payouts, recent_bookings, commission_rate
+
+### Company Cars
+**GET** `/company/car_list.php?company_id=1`
+
+Query params:
+- `company_id` (required)
+- `status` (optional): 1 = active, 0 = inactive
+- `page` (optional): pagination
+- `limit` (optional): items per page
+
+### Add Company Car
+**POST** `/company/add_car.php`
+```json
+{
+  "company_id": 1,
+  "title": "Toyota Camry 2024",
+  "brand": 1,
+  "type_id": 1,
+  "fuel": "petrol",
+  "transmission": "automatic",
+  "seat": 5,
+  "city": 1,
+  "ac_heater": "AC",
+  "price": 100,
+  "price_type": "days",
+  "description": "Well maintained car"
+}
+```
+
+### Company Bookings
+**GET** `/company/bookings.php?company_id=1`
+
+Query params:
+- `company_id` (required)
+- `status` (optional): Pending, Pick_Up, Completed, Cancelled
+- `page`, `limit` for pagination
+
+### Company Earnings
+**GET** `/company/earnings.php?company_id=1`
+
+Query params:
+- `company_id` (required)
+- `start_date`, `end_date` (optional)
+- `page`, `limit` for pagination
+
+### Update Company Profile
+**POST** `/company/update_profile.php`
+- Supports JSON or multipart form data
+- Can upload `logo` and `cover_image`
+```json
+{
+  "company_id": 1,
+  "company_name": "Updated Name",
+  "phone": "+1234567890",
+  "address": "New Address",
+  "description": "Company description"
+}
+```
+
+### Request Payout
+**POST** `/company/request_payout.php`
+```json
+{
+  "company_id": 1,
+  "amount": 500.00,
+  "payment_method": "bank_transfer",
+  "bank_name": "Chase Bank",
+  "account_number": "123456789",
+  "account_name": "ABC Rentals LLC"
+}
+```
+Payment methods: `bank_transfer`, `paypal`, `mobile_money`
+
+### Company Wallet
+**GET** `/company/wallet.php?company_id=1`
+
+Returns: available_balance, pending_balance, total_earned, total_withdrawn, transactions
+
+### Upload Document
+**POST** `/company/upload_document.php`
+- Multipart form data
+- `company_id` (required)
+- `document_type` (required): business_reg, tax_id, insurance, license, id_card, other
+- `document` (required): file
+- `document_name` (optional)
+- `expiry_date` (optional)
+
+### Get Documents
+**GET** `/company/documents.php?company_id=1`
+
+Query params:
+- `company_id` (required)
+- `document_type` (optional)
+- `status` (optional): pending, verified, rejected, expired
+
+### Public Company Profile
+**GET** `/company_info.php?company_id=1` or `?slug=company-slug`
+
+Returns public company info, featured cars, recent reviews
+
+---
+
+## Database Schema
+
+For the complete database schema including the multi-tenant company system, see:
+`database/migrations/001_multi_tenant_companies.sql`
+
